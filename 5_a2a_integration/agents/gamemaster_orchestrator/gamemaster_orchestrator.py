@@ -48,6 +48,7 @@ def get_user(user_name):
 # TODO: Create MCP Client for dice rolling service
 # Initialize MCPClient with a lambda that returns streamablehttp_client("http://localhost:8080/mcp")
 mcp_client = MCPClient(lambda: streamablehttp_client("http://localhost:8080/mcp"))
+mcp_client.start()
 
 # System prompt for the agent
 SYSTEM_PROMPT = """You are a D&D Game Master orchestrator with access to specialized agents and tools.
@@ -99,19 +100,27 @@ try:
     agent = Agent(
         model="us.anthropic.claude-sonnet-4-6",
         system_prompt=SYSTEM_PROMPT,
-        tools=[*a2a_client.get_tools(), *mcp_client.list_tools_sync()],
-        output_model=StoryOutput,
+        tools=[*a2a_client.tools, *mcp_client.list_tools_sync()],
     )
 except Exception as e:
     print(f"Error occurred: {str(e)}")
+    raise
 
 @app.post("/inquire")
 async def ask_agent(request: QuestionRequest):
     print("Processing request...")
     try:
         response = await agent.invoke_async(request.question)
-        print(response.structured_output)
-        return JSONResponse(content={ "response": response.structured_output.model_dump()})
+        structured = response.structured_output
+        if structured is None:
+            structured = StoryOutput(
+                response=str(response),
+                actions_suggestions=[],
+                destails="",
+                dice_rolls=[]
+            )
+        print(structured)
+        return JSONResponse(content={"response": structured.model_dump()})
         
     except Exception as e:
         print(f"Error occurred: {str(e)}")
