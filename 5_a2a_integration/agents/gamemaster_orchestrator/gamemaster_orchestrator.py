@@ -4,9 +4,10 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from tinydb import TinyDB, Query
 from strands import Agent
+from typing import List
 from strands.tools.mcp.mcp_client import MCPClient
 from mcp.client.streamable_http import streamablehttp_client
 from strands_tools.a2a_client import A2AClientToolProvider
@@ -46,7 +47,7 @@ def get_user(user_name):
 
 # TODO: Create MCP Client for dice rolling service
 # Initialize MCPClient with a lambda that returns streamablehttp_client("http://localhost:8080/mcp")
-mcp_client = None
+mcp_client = MCPClient(lambda: streamablehttp_client("http://localhost:8080/mcp"))
 
 # System prompt for the agent
 SYSTEM_PROMPT = """You are a D&D Game Master orchestrator with access to specialized agents and tools.
@@ -88,14 +89,18 @@ class StoryOutput(BaseModel):
 
 try:
     # TODO: Create the A2A client with the A2AClientToolProvider and pass the list of the known agent urls
-    A2A_AGENT_URLS = []
+    A2A_AGENT_URLS = [
+        "http://localhost:8000",
+        "http://localhost:8001",
+    ]
 
     a2a_client = A2AClientToolProvider(known_agent_urls=A2A_AGENT_URLS)
 
     agent = Agent(
+        model="us.anthropic.claude-sonnet-4-6",
         system_prompt=SYSTEM_PROMPT,
-        #TODO: Create the gamemaster agent with both A2A and MCP tools
-        #TODO: Force the response to use the StoryOutput model
+        tools=[*a2a_client.get_tools(), *mcp_client.list_tools_sync()],
+        output_model=StoryOutput,
     )
 except Exception as e:
     print(f"Error occurred: {str(e)}")
