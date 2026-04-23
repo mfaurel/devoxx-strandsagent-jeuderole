@@ -1,9 +1,10 @@
 from strands import Agent
-# TODO: Import the http_request built-in tool
+from strands_tools import http_request
 
 agent = Agent(
+    model="us.anthropic.claude-sonnet-4-6",
     tools=[
-        # TODO: Add the http_request built-in-tool
+        http_request
     ]
     )
 

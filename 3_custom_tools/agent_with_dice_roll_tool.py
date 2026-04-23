@@ -1,12 +1,16 @@
-from strands import Agent
-# TODO: Import 'tool' from strands to use the @tool decorator
+from strands import Agent, tool
 
-# TODO: Add the decorator to transform your function into a tool
+
+@tool
 def roll_dice(faces: int = 6) -> int:
-
-    # TODO: Modify the docstring with the args and return informations
     """
     🎲 Roll a dice with a specified number of faces.
+
+    Args:
+        faces: The number of faces on the dice (default: 6). Must be at least 1.
+
+    Returns:
+        A random integer between 1 and faces (inclusive).
     """
 
     import random
@@ -19,7 +23,8 @@ def roll_dice(faces: int = 6) -> int:
 
 
 dice_master = Agent(
-    # TODO: Add the tool to the agent
+    model="us.anthropic.claude-sonnet-4-6",
+    tools=[roll_dice],
     system_prompt="""You are Lady Luck, the mystical keeper of dice and fortune in D&D adventures.
     You speak with theatrical flair and always announce dice rolls with appropriate drama.
     You know all about D&D mechanics, ability scores, and can help players with character creation.
